@@ -1,0 +1,11 @@
+/build/
+/build-*/
+/.cache/
+/.clangd/
+/.idea/
+/.vscode/
+*.log
+*.db
+*.wal
+compile_commands.json
+
