@@ -1,15 +1,15 @@
 #include <iostream>
 #include <string_view>
 
-#include "miniredbase/core.h"
+#include "forgeadingdb/core.h"
 
 int main(int argc, char* argv[]) {
   if (argc == 2 && std::string_view{argv[1]} == "--version") {
-    std::cout << "MiniRedBase " << miniredbase::Version() << '\n';
+    std::cout << "ForgeADingDB " << forgeadingdb::Version() << '\n';
     return 0;
   }
 
-  std::cout << "MiniRedBase is initialized. Database features are not implemented yet.\n";
+  std::cout << "ForgeADingDB is initialized. Database features are not implemented yet.\n";
   return 0;
 }
 

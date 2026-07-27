@@ -1,9 +1,9 @@
 #include <cstdlib>
 
-#include "miniredbase/core.h"
+#include "forgeadingdb/core.h"
 
 int main() {
-  if (miniredbase::Version().empty()) {
+  if (forgeadingdb::Version().empty()) {
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

@@ -1,6 +1,6 @@
-add_executable(miniredbase_core_test core_test.cpp)
-target_link_libraries(miniredbase_core_test PRIVATE miniredbase_core)
+add_executable(forgeadingdb_core_test core_test.cpp)
+target_link_libraries(forgeadingdb_core_test PRIVATE forgeadingdb_core)
 
-add_test(NAME miniredbase.core COMMAND miniredbase_core_test)
-add_test(NAME miniredbase.version COMMAND miniredbase --version)
+add_test(NAME forgeadingdb.core COMMAND forgeadingdb_core_test)
+add_test(NAME forgeadingdb.version COMMAND forgeadingdb --version)
 

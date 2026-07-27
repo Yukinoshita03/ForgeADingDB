@@ -1,8 +1,8 @@
-#include "miniredbase/core.h"
+#include "forgeadingdb/core.h"
 
-namespace miniredbase {
+namespace forgeadingdb {
 
 std::string_view Version() noexcept { return "0.1.0"; }
 
-}  // namespace miniredbase
+}  // namespace forgeadingdb
 

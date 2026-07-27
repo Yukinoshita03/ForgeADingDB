@@ -2,9 +2,8 @@
 
 #include <string_view>
 
-namespace miniredbase {
+namespace forgeadingdb {
 
 [[nodiscard]] std::string_view Version() noexcept;
 
-}  // namespace miniredbase
-
+}  // namespace forgeadingdb

@@ -1,5 +1,6 @@
 /build/
 /build-*/
+/build_*/
 /.cache/
 /.clangd/
 /.idea/
@@ -8,4 +9,3 @@
 *.db
 *.wal
 compile_commands.json
-

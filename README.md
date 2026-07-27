@@ -1,6 +1,6 @@
-# MiniRedBase
+# ForgeADingDB
 
-MiniRedBase 是一个使用现代 C++ 编写的小型教学关系型数据库。
+ForgeADingDB 是一个使用现代 C++ 编写的小型教学关系型数据库。
 
 > 当前状态：仓库骨架已初始化，数据库功能尚未实现。
 
@@ -33,7 +33,7 @@ ctest --test-dir build --output-on-failure
 运行：
 
 ```powershell
-.\build\miniredbase.exe --version
+.\build\forgeadingdb.exe --version
 ```
 
 在多配置生成器下，可执行文件可能位于 `build\Debug` 或 `build\Release`。
