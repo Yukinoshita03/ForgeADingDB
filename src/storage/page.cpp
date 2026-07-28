@@ -4,7 +4,7 @@
 
 namespace forgeadingdb {
 
-    PageId Page::GetPageId() noexcept{
+    PageId Page::GetPageId() const noexcept{
         return this->page_id_;
     }
     bool Page::SetPageId(PageId input) noexcept{

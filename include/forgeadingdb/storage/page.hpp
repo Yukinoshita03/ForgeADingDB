@@ -15,7 +15,7 @@ class Page {
  public:
   Page() = default;
 
-  PageId GetPageId() noexcept;
+  PageId GetPageId() const noexcept;
   bool SetPageId(PageId input) noexcept;
 
   std::byte* Data() noexcept;
