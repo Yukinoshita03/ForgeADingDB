@@ -16,10 +16,10 @@ namespace forgeadingdb {
     return true;
     };
     std::byte* Page::Data() noexcept {
-        return this->data_.begin();
+        return this->data_.data();
     }
     const std::byte* Page::Data() const noexcept{
-        return this->data_.begin();
+        return this->data_.data();
     }
     bool Page::Reset() noexcept{
         page_id_ = kInvalidPageId;
