@@ -14,7 +14,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile commands" FORCE)
 
 option(FORGEADINGDB_BUILD_TESTS "Build ForgeADingDB tests" ON)
 
-add_library(forgeadingdb_core STATIC src/core.cpp src/storage/page.cpp)
+add_library(
+  forgeadingdb_core STATIC
+  src/core.cpp
+  src/storage/page.cpp
+  src/storage/disk_manager.cpp
+)
 target_include_directories(
   forgeadingdb_core
   PUBLIC
