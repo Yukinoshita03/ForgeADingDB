@@ -19,6 +19,7 @@ add_library(
   src/core.cpp
   src/storage/page.cpp
   src/storage/disk_manager.cpp
+  src/storage/buffer_pool_manger.cpp
 )
 target_include_directories(
   forgeadingdb_core
