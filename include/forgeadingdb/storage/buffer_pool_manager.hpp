@@ -16,6 +16,8 @@ class BufferPoolManager {
   Page* FetchPage(PageId page_id);
   // Returns false for invalid or uncached IDs; propagates disk I/O errors.
   bool FlushPage(PageId page_id);
+  // Flushes all cached pages; propagates disk I/O errors.
+  bool FlushAllPage();
 
  private:
   std::vector<Page> pages_;

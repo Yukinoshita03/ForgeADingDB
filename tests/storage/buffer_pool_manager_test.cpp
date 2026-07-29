@@ -80,6 +80,28 @@ bool TestFetchCacheHitPoolFullAndFlush() {
       throw std::runtime_error("flushed page was not persisted");
     }
 
+    forgeadingdb::BufferPoolManager all_pages_pool(2, disk_manager);
+    forgeadingdb::Page* fetched_zero = all_pages_pool.FetchPage(0);
+    forgeadingdb::Page* fetched_one = all_pages_pool.FetchPage(1);
+    if (fetched_zero == nullptr || fetched_one == nullptr) {
+      throw std::runtime_error("pages were not loaded for flush-all");
+    }
+
+    fetched_zero->Data()[0] = std::byte{0x3C};
+    fetched_one->Data()[0] = std::byte{0x4D};
+    if (!all_pages_pool.FlushAllPage()) {
+      throw std::runtime_error("cached pages could not all be flushed");
+    }
+
+    forgeadingdb::Page persisted_zero;
+    forgeadingdb::Page persisted_one;
+    disk_manager.ReadPage(0, persisted_zero);
+    disk_manager.ReadPage(1, persisted_one);
+    if (persisted_zero.Data()[0] != std::byte{0x3C} ||
+        persisted_one.Data()[0] != std::byte{0x4D}) {
+      throw std::runtime_error("flush-all did not persist every cached page");
+    }
+
     forgeadingdb::BufferPoolManager empty_pool(0, disk_manager);
     if (empty_pool.FetchPage(0) != nullptr) {
       throw std::runtime_error("zero-sized pool returned a page");

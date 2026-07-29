@@ -26,11 +26,12 @@ Page* BufferPoolManager::FetchPage(PageId page_id) {
   if (free_list_.empty()) {
     return nullptr;
   }
-
   const std::size_t index = free_list_.front();
   Page& page = pages_[index];
+  if (!disk_manager_->ReadPage(page_id, page)) {
+    return nullptr;
+  }
 
-  disk_manager_->ReadPage(page_id, page);
   free_list_.pop_front();
   page_table_.emplace(page_id, index);
   return &page;
@@ -40,13 +41,21 @@ bool BufferPoolManager::FlushPage(PageId page_id) {
   if (page_id < 0) {
     return false;
   }
-
   auto it = page_table_.find(page_id);
   if (it == page_table_.end()) {
     return false;
   }
 
-  disk_manager_->WritePage(page_id, pages_[it->second]);
+  return disk_manager_->WritePage(page_id, pages_[it->second]);
+}
+
+bool BufferPoolManager::FlushAllPage() {
+  for (const auto& [page_id, index] : page_table_) {
+    if (!disk_manager_->WritePage(page_id, pages_[index])) {
+      return false;
+    }
+  }
+
   return true;
 }
 
