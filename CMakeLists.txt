@@ -19,7 +19,7 @@ add_library(
   src/core.cpp
   src/storage/page.cpp
   src/storage/disk_manager.cpp
-  src/storage/buffer_pool_manger.cpp
+  src/storage/buffer_pool_manager.cpp
 )
 target_include_directories(
   forgeadingdb_core
@@ -41,4 +41,3 @@ if(FORGEADINGDB_BUILD_TESTS)
   include(CTest)
   add_subdirectory(tests)
 endif()
-

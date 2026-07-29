@@ -12,7 +12,9 @@ namespace forgeadingdb {
 class BufferPoolManager {
  public:
   BufferPoolManager(std::size_t pool_size, DiskManager& disk_manager);
+  // Returns nullptr for invalid IDs or a full pool; propagates disk I/O errors.
   Page* FetchPage(PageId page_id);
+  // Returns false for invalid or uncached IDs; propagates disk I/O errors.
   bool FlushPage(PageId page_id);
 
  private:

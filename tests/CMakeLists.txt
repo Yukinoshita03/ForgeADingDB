@@ -7,8 +7,20 @@ target_link_libraries(forgeadingdb_page_test PRIVATE forgeadingdb_core)
 add_executable(forgeadingdb_disk_manager_test storage/disk_manager_test.cpp)
 target_link_libraries(forgeadingdb_disk_manager_test PRIVATE forgeadingdb_core)
 
+add_executable(
+  forgeadingdb_buffer_pool_manager_test
+  storage/buffer_pool_manager_test.cpp
+)
+target_link_libraries(
+  forgeadingdb_buffer_pool_manager_test
+  PRIVATE forgeadingdb_core
+)
+
 add_test(NAME forgeadingdb.core COMMAND forgeadingdb_core_test)
 add_test(NAME forgeadingdb.page COMMAND forgeadingdb_page_test)
 add_test(NAME forgeadingdb.disk_manager COMMAND forgeadingdb_disk_manager_test)
+add_test(
+  NAME forgeadingdb.buffer_pool_manager
+  COMMAND forgeadingdb_buffer_pool_manager_test
+)
 add_test(NAME forgeadingdb.version COMMAND forgeadingdb --version)
-
