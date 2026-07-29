@@ -8,12 +8,11 @@
 
 namespace {
 
-constexpr const char* kTestDatabaseFile =
-    "forgeadingdb_buffer_pool_manager_test.db";
-constexpr const char* kEmptyDatabaseFile =
-    "forgeadingdb_buffer_pool_manager_empty_test.db";
-constexpr const char* kEvictionDatabaseFile =
-    "forgeadingdb_buffer_pool_manager_eviction_test.db";
+constexpr const char* kTestDatabaseFile = "forgeadingdb_buffer_pool_manager_test.db";
+constexpr const char* kEmptyDatabaseFile = "forgeadingdb_buffer_pool_manager_empty_test.db";
+constexpr const char* kEvictionDatabaseFile = "forgeadingdb_buffer_pool_manager_eviction_test.db";
+constexpr const char* kDirtyPageDatabaseFile =
+    "forgeadingdb_buffer_pool_manager_dirty_page_test.db";
 
 bool CreateEmptyFile(const char* file_name) {
   std::remove(file_name);
@@ -21,9 +20,7 @@ bool CreateEmptyFile(const char* file_name) {
   return static_cast<bool>(file);
 }
 
-void FillPage(forgeadingdb::Page& page,
-              forgeadingdb::PageId page_id,
-              std::byte value) {
+void FillPage(forgeadingdb::Page& page, forgeadingdb::PageId page_id, std::byte value) {
   page.SetPageId(page_id);
   for (std::size_t index = 0; index < forgeadingdb::kPageSize; ++index) {
     page.Data()[index] = value;
@@ -49,14 +46,12 @@ bool TestFetchCacheHitPoolFullAndFlush() {
     forgeadingdb::BufferPoolManager buffer_pool(1, disk_manager);
 
     if (buffer_pool.FetchPage(forgeadingdb::kInvalidPageId) != nullptr ||
-        buffer_pool.FlushPage(forgeadingdb::kInvalidPageId) ||
-        buffer_pool.FlushPage(0)) {
+        buffer_pool.FlushPage(forgeadingdb::kInvalidPageId) || buffer_pool.FlushPage(0)) {
       throw std::runtime_error("invalid or uncached page was accepted");
     }
 
     forgeadingdb::Page* fetched = buffer_pool.FetchPage(0);
-    if (fetched == nullptr || fetched->GetPageId() != 0 ||
-        fetched->Data()[0] != std::byte{0x11}) {
+    if (fetched == nullptr || fetched->GetPageId() != 0 || fetched->Data()[0] != std::byte{0x11}) {
       throw std::runtime_error("page zero was not loaded correctly");
     }
 
@@ -65,11 +60,11 @@ bool TestFetchCacheHitPoolFullAndFlush() {
     }
 
     if (!buffer_pool.UnpinPage(0, false)) {
-    throw std::runtime_error("repinned page could not be unpinned");
+      throw std::runtime_error("repinned page could not be unpinned");
     }
 
     if (buffer_pool.UnpinPage(0, false)) {
-    throw std::runtime_error("page was unpinned below zero");
+      throw std::runtime_error("page was unpinned below zero");
     }
     fetched->Data()[0] = std::byte{0x7A};
     forgeadingdb::Page* cached = buffer_pool.FetchPage(0);
@@ -82,8 +77,7 @@ bool TestFetchCacheHitPoolFullAndFlush() {
       throw std::runtime_error("duplicate fetch did not return the cached page");
     }
 
-    if (!buffer_pool.UnpinPage(0, false) ||
-        !buffer_pool.UnpinPage(0, false)) {
+    if (!buffer_pool.UnpinPage(0, false) || !buffer_pool.UnpinPage(0, false)) {
       throw std::runtime_error("duplicate fetch did not require duplicate unpin");
     }
 
@@ -97,8 +91,7 @@ bool TestFetchCacheHitPoolFullAndFlush() {
 
     forgeadingdb::Page persisted;
     disk_manager.ReadPage(0, persisted);
-    if (persisted.GetPageId() != 0 ||
-        persisted.Data()[0] != std::byte{0x7A} ||
+    if (persisted.GetPageId() != 0 || persisted.Data()[0] != std::byte{0x7A} ||
         persisted.Data()[1] != std::byte{0x11}) {
       throw std::runtime_error("flushed page was not persisted");
     }
@@ -112,7 +105,7 @@ bool TestFetchCacheHitPoolFullAndFlush() {
 
     fetched_zero->Data()[0] = std::byte{0x3C};
     fetched_one->Data()[0] = std::byte{0x4D};
-    if (!all_pages_pool.FlushAllPage()) {
+    if (!all_pages_pool.FlushAllPages()) {
       throw std::runtime_error("cached pages could not all be flushed");
     }
 
@@ -120,8 +113,7 @@ bool TestFetchCacheHitPoolFullAndFlush() {
     forgeadingdb::Page persisted_one;
     disk_manager.ReadPage(0, persisted_zero);
     disk_manager.ReadPage(1, persisted_one);
-    if (persisted_zero.Data()[0] != std::byte{0x3C} ||
-        persisted_one.Data()[0] != std::byte{0x4D}) {
+    if (persisted_zero.Data()[0] != std::byte{0x3C} || persisted_one.Data()[0] != std::byte{0x4D}) {
       throw std::runtime_error("flush-all did not persist every cached page");
     }
 
@@ -212,12 +204,66 @@ bool TestReadErrorPropagation() {
   return propagated;
 }
 
+bool TestDirtyPageLifecycle() {
+  if (!CreateEmptyFile(kDirtyPageDatabaseFile)) {
+    return false;
+  }
+
+  bool passed = false;
+  try {
+    forgeadingdb::DiskManager disk_manager(kDirtyPageDatabaseFile);
+
+    forgeadingdb::Page page_zero;
+    forgeadingdb::Page page_one;
+    FillPage(page_zero, 0, std::byte{0x11});
+    FillPage(page_one, 1, std::byte{0x22});
+    disk_manager.WritePage(0, page_zero);
+    disk_manager.WritePage(1, page_one);
+
+    forgeadingdb::BufferPoolManager buffer_pool(1, disk_manager);
+    forgeadingdb::Page* dirty_page = buffer_pool.FetchPage(0);
+    if (dirty_page == nullptr || buffer_pool.FetchPage(0) != dirty_page) {
+      throw std::runtime_error("page zero could not be pinned twice");
+    }
+
+    dirty_page->Data()[0] = std::byte{0x7A};
+    if (!buffer_pool.UnpinPage(0, true)) {
+      throw std::runtime_error("dirty page could not be unpinned");
+    }
+
+    if (buffer_pool.FetchPage(1) != nullptr) {
+      throw std::runtime_error("pinned dirty page was evicted");
+    }
+
+    // A later read-only unpin must preserve the earlier dirty state.
+    if (!buffer_pool.UnpinPage(0, false)) {
+      throw std::runtime_error("dirty page could not release its final pin");
+    }
+
+    if (buffer_pool.FetchPage(1) == nullptr) {
+      throw std::runtime_error("unpinned dirty page was not evicted");
+    }
+
+    forgeadingdb::Page persisted;
+    disk_manager.ReadPage(0, persisted);
+    if (persisted.Data()[0] != std::byte{0x7A}) {
+      throw std::runtime_error("dirty page changes were not written back");
+    }
+
+    passed = true;
+  } catch (...) {
+    passed = false;
+  }
+
+  std::remove(kDirtyPageDatabaseFile);
+  return passed;
+}
+
 }  // namespace
 
 int main() {
-  if (!TestFetchCacheHitPoolFullAndFlush() ||
-      !TestUnpinnedPageCanBeEvicted() ||
-      !TestReadErrorPropagation()) {
+  if (!TestFetchCacheHitPoolFullAndFlush() || !TestUnpinnedPageCanBeEvicted() ||
+      !TestReadErrorPropagation() || !TestDirtyPageLifecycle()) {
     return EXIT_FAILURE;
   }
 
