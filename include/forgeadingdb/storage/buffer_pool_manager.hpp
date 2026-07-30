@@ -10,6 +10,7 @@
 #include "forgeadingdb/storage/page.hpp"
 
 namespace forgeadingdb {
+
 class BufferPoolManager {
  private:
   struct FrameMetadata {
@@ -20,9 +21,9 @@ class BufferPoolManager {
   std::vector<Page> pages_;
   std::vector<FrameMetadata> frame_metadata_;
   // Maps each disk page to the frame that currently caches it.
-  std::unordered_map<PageId, std::size_t> page_table_;
+  std::unordered_map<PageId, FrameId> page_table_;
   // Frame IDs that can be reused without evicting a cached page.
-  std::deque<std::size_t> free_frame_ids_;
+  std::deque<FrameId> free_frame_ids_;
   DiskManager* disk_manager_{nullptr};
 
  public:
@@ -35,5 +36,4 @@ class BufferPoolManager {
   bool FlushAllPages();
   bool UnpinPage(PageId page_id, bool is_dirty);
 };
-
 }  // namespace forgeadingdb
