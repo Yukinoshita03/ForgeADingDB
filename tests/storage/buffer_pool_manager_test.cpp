@@ -13,6 +13,8 @@ constexpr const char* kEmptyDatabaseFile = "forgeadingdb_buffer_pool_manager_emp
 constexpr const char* kEvictionDatabaseFile = "forgeadingdb_buffer_pool_manager_eviction_test.db";
 constexpr const char* kDirtyPageDatabaseFile =
     "forgeadingdb_buffer_pool_manager_dirty_page_test.db";
+constexpr const char* kLruDatabaseFile =
+    "forgeadingdb_buffer_pool_manager_lru_test.db";
 
 bool CreateEmptyFile(const char* file_name) {
   std::remove(file_name);
@@ -180,6 +182,60 @@ bool TestUnpinnedPageCanBeEvicted() {
   return passed;
 }
 
+bool TestBufferPoolUsesLruOrder() {
+  if (!CreateEmptyFile(kLruDatabaseFile)) {
+    return false;
+  }
+
+  bool passed = false;
+  try {
+    forgeadingdb::DiskManager disk_manager(kLruDatabaseFile);
+
+    forgeadingdb::Page page_zero;
+    forgeadingdb::Page page_one;
+    forgeadingdb::Page page_two;
+    FillPage(page_zero, 0, std::byte{0x10});
+    FillPage(page_one, 1, std::byte{0x20});
+    FillPage(page_two, 2, std::byte{0x30});
+    disk_manager.WritePage(0, page_zero);
+    disk_manager.WritePage(1, page_one);
+    disk_manager.WritePage(2, page_two);
+
+    forgeadingdb::BufferPoolManager buffer_pool(2, disk_manager);
+    if (buffer_pool.FetchPage(0) == nullptr ||
+        buffer_pool.FetchPage(1) == nullptr) {
+      throw std::runtime_error("initial pages could not be fetched");
+    }
+
+    if (!buffer_pool.UnpinPage(0, false) ||
+        !buffer_pool.UnpinPage(1, false)) {
+      throw std::runtime_error("initial pages could not be unpinned");
+    }
+
+    // Reusing page zero makes it newer than page one in the LRU order.
+    if (buffer_pool.FetchPage(0) == nullptr ||
+        !buffer_pool.UnpinPage(0, false)) {
+      throw std::runtime_error("page zero could not be reused");
+    }
+
+    if (buffer_pool.FetchPage(2) == nullptr) {
+      throw std::runtime_error("page two could not be fetched");
+    }
+
+    if (buffer_pool.FlushPage(1) || !buffer_pool.FlushPage(0) ||
+        !buffer_pool.FlushPage(2)) {
+      throw std::runtime_error("the least recently used page was not evicted");
+    }
+
+    passed = true;
+  } catch (...) {
+    passed = false;
+  }
+
+  std::remove(kLruDatabaseFile);
+  return passed;
+}
+
 bool TestReadErrorPropagation() {
   if (!CreateEmptyFile(kEmptyDatabaseFile)) {
     return false;
@@ -263,7 +319,8 @@ bool TestDirtyPageLifecycle() {
 
 int main() {
   if (!TestFetchCacheHitPoolFullAndFlush() || !TestUnpinnedPageCanBeEvicted() ||
-      !TestReadErrorPropagation() || !TestDirtyPageLifecycle()) {
+      !TestBufferPoolUsesLruOrder() || !TestReadErrorPropagation() ||
+      !TestDirtyPageLifecycle()) {
     return EXIT_FAILURE;
   }
 

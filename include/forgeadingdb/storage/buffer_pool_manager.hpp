@@ -7,6 +7,7 @@
 
 #include "forgeadingdb/common/types.h"
 #include "forgeadingdb/storage/disk_manager.hpp"
+#include "forgeadingdb/storage/lru_replacer.hpp"
 #include "forgeadingdb/storage/page.hpp"
 
 namespace forgeadingdb {
@@ -24,6 +25,7 @@ class BufferPoolManager {
   std::unordered_map<PageId, FrameId> page_table_;
   // Frame IDs that can be reused without evicting a cached page.
   std::deque<FrameId> free_frame_ids_;
+  LruReplacer replacer_;
   DiskManager* disk_manager_{nullptr};
 
  public:
